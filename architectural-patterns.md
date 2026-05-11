@@ -256,6 +256,23 @@ candidates → score-all → rank → top-K → project
 
 ---
 
+### POC `agent_loop_minimal.py`
+
+#### 17. Tool calls are optional by default
+
+- **The thing:** Claude is not obligated to call a tool just because one is
+  available. The default `tool_choice={"type": "auto"}` lets the model
+  decide. For some prompts (e.g. "what's the weather in Tokyo"), Claude
+  may answer from priors ("Tokyo is usually mild") and skip the tool
+  entirely.
+- **Why it matters:** A non-deterministic agent makes for flaky demos and
+  invisible hallucinations. If a tool MUST be called, enforce it:
+  - `tool_choice={"type": "any"}` — must call some tool
+  - `tool_choice={"type": "tool", "name": "X"}` — must call tool X
+  - Or write the system prompt to make the rule explicit
+- **Reference:** `llm-engineering-patterns/manual-pocs/agent_loop_minimal.py`,
+  observed run 3 of 3 where Claude skipped the weather tool entirely
+
 ## Open questions / parking lot
 
 - Should the in-memory catalog be deduplicated by uid at load time, or only
