@@ -303,6 +303,18 @@ candidates → score-all → rank → top-K → project
     load_dotenv(find_dotenv(".env.local"), override=True)
     ```
 
+#### 20. All tool_result blocks in a single user message
+
+- **The thing:** When a response contains **N** tool_use blocks, all N tool_result blocks must be returned in one single user message — each matched by `tool_use_id` to its `tool_use`.
+- **Why it matters:** Avoid having a `400 BadRequest` error from the Anthropic API because we don't return the expected shape: **N** tool_results in one message.
+- **Reference:** `manual-pocs/tool_use_parallel.py` — where we collect all the `tool_use` blocks of a specific user message before adding it to the list provided back to the API.
+
+#### 21. Text and tool_use blocks can appear in the same response
+
+- **The thing:** Sometimes Claude returned a mixture of "text" and "tool_use" blocks.
+- **Why it matters:** Apparition is non-deterministic — observed in roughly 1 out of 4-5 runs. Tests that ignore this block can pass by luck and ship the bug. We need to ignore those text blocks because they are just intent commentary from Claude.
+- **Reference:** `manual-pocs/tool_use_parallel.py` — the part where we collect the response blocks with `response.stop_reason` of type `tool_use` that sometimes comes mixed with some text block.  
+
 ## Open questions / parking lot
 
 - Should the in-memory catalog be deduplicated by uid at load time, or only
