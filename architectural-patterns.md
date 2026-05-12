@@ -273,19 +273,35 @@ candidates → score-all → rank → top-K → project
 - **Reference:** `llm-engineering-patterns/manual-pocs/agent_loop_minimal.py`,
   observed run 3 of 3 where Claude skipped the weather tool entirely
 
-#### 18. Tool use enforcement trial in tool descriptions
+#### 18. Tool descriptions describe the contract, not the implementation
 
-Tool descriptions describe the contract, not the implementation. Don't tell Claude "use your internal X tool" — Claude has only the tools you give it. The description is for selecting and parameterizing the tool, not for prescribing its inner workings.
+- **The thing:** Don't tell Claude how to do its job inside the tool
+  description ("use your internal web_fetch tool"). Claude has only the
+  tools you give it. The description should explain what the tool returns
+  and when to call it, nothing more.
+- **Why it matters:** Telling Claude to use a non-existent tool wastes
+  tokens, confuses tool selection, and produces "hallucinations of
+  robustness" — Claude inventing narratives about why a fake tool failed.
+- **Reference:** debug session on agent_loop_minimal.py where Claude
+  reported "the service is down" for runs in a row because the description
+  promised a `web_fetch` lookup the tool didn't actually do.
 
-#### 19. Env vars path resolving
+#### 19. File-relative paths via `__file__`
 
-Use Path(__file__).parent / "..." for files co-located with code (env files, config, fixtures). Use Path.cwd() / "..." only when you genuinely want "wherever the user invoked us from" semantics (rare, mostly for CLI tools). __file__-relative is the default for everything else.
+- **The thing:** Resolve files that live alongside code with
+  `Path(__file__).parent / "..."`. Use `Path.cwd()` only when you genuinely
+  want "wherever the user invoked us from" (rare, mostly CLI tools).
+- **Why it matters:** `dotenv_path="../.env.local"` is relative to cwd and
+  breaks the moment the script is invoked from a different directory.
+  `__file__`-relative is invariant.
+- **Reference:** `manual-pocs/agent_loop_minimal.py::ENV_PATH`
 
-NB: The `find_dotenv` method from the `dotenv` package could also be used like below but is not reliable if you have multiple files with the same name.
-```python
-from dotenv import find_dotenv
-load_dotenv(find_dotenv(".env.local"), override=True)
-``` 
+    NB: The `find_dotenv` method from the `dotenv` package could also be used like below but is not reliable if you have multiple files with the same name.
+
+    ```python
+    from dotenv import find_dotenv
+    load_dotenv(find_dotenv(".env.local"), override=True)
+    ```
 
 ## Open questions / parking lot
 
